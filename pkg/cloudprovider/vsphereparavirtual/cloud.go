@@ -22,11 +22,13 @@ import (
 	"io"
 	"io/ioutil"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
 	cloudprovider "k8s.io/cloud-provider"
 
+	"k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphereparavirtual/controllers/routablepod"
 	cpcfg "k8s.io/cloud-provider-vsphere/pkg/common/config"
 	k8s "k8s.io/cloud-provider-vsphere/pkg/common/kubernetes"
 )
@@ -48,6 +50,12 @@ const (
 var (
 	// SupervisorClusterSecret is the name of vsphere paravirtual supervisor cluster cloud provider secret
 	SupervisorClusterSecret = "cloud-provider-creds"
+
+	// ClusterName contains the cluster-name flag injected from main, needed for cleanup
+	ClusterName string
+
+	// RouteEnabled if set to true, will start ippool and node controller.
+	RouteEnabled bool
 )
 
 func init() {
@@ -82,13 +90,13 @@ func newVSphereParavirtual(cfg *cpcfg.Config) (*VSphereParavirtual, error) {
 	return cp, nil
 }
 
-// Initialize initializes the cloud provider.
+// Initialize initializes the vSphere paravirtual cloud provider.
 func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
 	klog.V(0).Info("Initing vSphere Paravirtual Cloud Provider")
 
 	ownerRef, err := readOwnerRef(VsphereParavirtualCloudProviderConfigPath)
 	if err != nil {
-		klog.Fatalf("Failed to read ownderRef:%s", err)
+		klog.Fatalf("Failed to read ownerRef:%s", err)
 	}
 
 	client, err := clientBuilder.Client(clientName)
@@ -98,7 +106,6 @@ func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerC
 
 	cp.client = client
 	cp.informMgr = k8s.NewInformer(client, true)
-	cp.informMgr.Listen()
 	cp.ownerReference = ownerRef
 
 	kcfg, err := getRestConfig(SupervisorClusterConfigPath)
@@ -110,6 +117,14 @@ func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerC
 	if err != nil {
 		klog.Fatalf("Failed to get cluster namespace: %v", err)
 	}
+
+	routes, err := NewRoutes(clusterNS, kcfg, *cp.ownerReference)
+	if err != nil {
+		klog.Errorf("Failed to init Route: %v", err)
+	}
+	cp.routes = routes
+
+	cp.informMgr.AddNodeListener(cp.nodeAdded, cp.nodeDeleted, nil)
 
 	lb, err := NewLoadBalancer(clusterNS, kcfg, cp.ownerReference)
 	if err != nil {
@@ -123,8 +138,16 @@ func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerC
 	}
 	cp.instances = instances
 
-	klog.V(0).Info("Initing vSphere Paravirtual Cloud Provider Succeeded")
+	if RouteEnabled {
+		klog.V(0).Info("Starting routable pod controllers")
 
+		if err := routablepod.StartControllers(kcfg, client, cp.informMgr, ClusterName, clusterNS, ownerRef); err != nil {
+			klog.Errorf("Failed to start Routable pod controllers: %v", err)
+		}
+	}
+
+	cp.informMgr.Listen()
+	klog.V(0).Info("Initing vSphere Paravirtual Cloud Provider Succeeded")
 }
 
 // LoadBalancer returns a balancer interface. Also returns true if the
@@ -137,7 +160,7 @@ func (cp *VSphereParavirtual) LoadBalancer() (cloudprovider.LoadBalancer, bool) 
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (cp *VSphereParavirtual) Instances() (cloudprovider.Instances, bool) {
-	klog.V(6).Info("Enabling Instances interface on vsphere paravirtual cloud provider")
+	klog.V(1).Info("Enabling Instances interface on vsphere paravirtual cloud provider")
 	return cp.instances, true
 }
 
@@ -164,8 +187,8 @@ func (cp *VSphereParavirtual) Clusters() (cloudprovider.Clusters, bool) {
 // Routes returns a routes interface along with whether the interface
 // is supported.
 func (cp *VSphereParavirtual) Routes() (cloudprovider.Routes, bool) {
-	klog.V(1).Info("The vsphere paravirtual cloud provider does not support routes")
-	return nil, false
+	klog.V(1).Info("Enabling Routes interface on vsphere paravirtual cloud provider")
+	return cp.routes, true
 }
 
 // ProviderName returns the cloud provider ID.
@@ -179,4 +202,32 @@ func (cp *VSphereParavirtual) ProviderName() string {
 // HasClusterID returns true if a ClusterID is required and set/
 func (cp *VSphereParavirtual) HasClusterID() bool {
 	return true
+}
+
+// Notification handler when node is added into k8s cluster.
+func (cp *VSphereParavirtual) nodeAdded(obj interface{}) {
+	node, ok := obj.(*v1.Node)
+	if node == nil || !ok {
+		klog.Warningf("nodeAdded: unrecognized object %+v", obj)
+		return
+	}
+
+	if cp.routes != nil {
+		klog.V(6).Info("adding node: %s", node.Name)
+		cp.routes.AddNode(node)
+	}
+}
+
+// Notification handler when node is removed from k8s cluster.
+func (cp *VSphereParavirtual) nodeDeleted(obj interface{}) {
+	node, ok := obj.(*v1.Node)
+	if node == nil || !ok {
+		klog.Warningf("nodeDeleted: unrecognized object %+v", obj)
+		return
+	}
+
+	if cp.routes != nil {
+		klog.V(6).Info("deleting node: %s", node.Name)
+		cp.routes.DeleteNode(node)
+	}
 }

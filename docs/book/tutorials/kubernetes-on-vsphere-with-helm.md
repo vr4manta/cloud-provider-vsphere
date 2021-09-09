@@ -8,49 +8,44 @@ Review the comprehensive guide locate at [Deploying a Kubernetes Cluster on vSph
 
 ### Helm requirements
 
-The [Helm Chart for vSphere CPI](https://github.com/helm/charts/tree/master/stable/vsphere-cpi) has been tested and verified working using Helm v.2.16.X and v3.0.0+. It is highly recommended that Helm v3.0.0+ be used when deploying the Helm Chart for vSphere CPI. At any point should you have additional questions regarding Helm, please visit this website for the official [Helm documentation](https://helm.sh/docs/).
+[Helm charts](https://github.com/helm/charts) has been fully deprecated since Nov 13th 2020.
+
+The [Helm Chart for vSphere CPI](https://github.com/helm/charts/tree/master/stable/vsphere-cpi) has been moved to [this repo](https://github.com/kubernetes/cloud-provider-vsphere/tree/master/charts/vsphere-cpi). It has been tested and verified working using Helm v.2.16.X and v3.0.0+. It is highly recommended that Helm v3.0.0+ be used when deploying the Helm Chart for vSphere CPI. At any point should you have additional questions regarding Helm, please visit this website for the official [Helm documentation](https://helm.sh/docs/).
 
 ## Setting up Helm
 
 Before you begin, all outlined steps below are carried out on the master node only.
 
-Download the [latest release](https://github.com/helm/helm/releases) of Helm appropriate for your platform. At the time of writing this Helm quickstart guide, the latest release is [v3.0.1](https://github.com/helm/helm/releases/tag/v3.0.1). It is highly recommended using Helm v3.0.0+ when deploying the Helm Chart for vSphere CPI.
+### Option 1: From the Binary Releases
 
-After the download is complete, unpack and install Helm v3.0.0.
+Download the [latest release](https://github.com/helm/helm/releases) of Helm appropriate for your platform. At the time of writing this Helm quickstart guide, the latest release is [v3.6.0](https://github.com/helm/helm/releases/tag/v3.6.0). It is highly recommended using Helm v3.0.0+ when deploying the Helm Chart for vSphere CPI.
+
+After the download is complete, unpack and install Helm v3.0.0+.
 
 ```bash
-# tar -zxvf helm-v3.0.1-linux-amd64.tgz
+# tar -zxvf helm-v3.6.0-linux-amd64.tgz
 # sudo mv linux-amd64/helm /usr/local/bin/helm
 ```
+
+### Option 2: From Script
+
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+```
+
+See [Install Helm](https://helm.sh/docs/intro/install/) for more options.
 
 Verify that Helm installed successfully by running the following command:
 
 ```bash
-# helm help
-```
-
-For Helm v3.0.0+, we need to add the `stable` charts repo on Helm in order to consume those charts. This can be done by executing the following command:
-
-```bash
-# helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-"stable" has been added to your repositories
-# helm repo update
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "stable" chart repository
-Update Complete. ⎈ Happy Helming!⎈
-```
-
-You can verify access to the `stable` repo by search for the Helm chart for vSphere CPI.
-
-```bash
-# helm search repo vsphere-cpi
-NAME                CHART VERSION   APP VERSION     DESCRIPTION
-stable/vsphere-cpi  0.1.2           1.0.0           A Helm chart for vSphere Cloud Provider Interfa...
+helm help
 ```
 
 ### Check that all nodes are tainted
 
-Before continuing, make sure all nodes are tainted with `node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule`. When the kubelet is started with “external” cloud provider, this taint is set on a node to mark it as unusable. After a controller from the cloud provider initializes this node, the kubelet removes this taint.
+Before continuing, make sure all nodes are tainted with `node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule`. When the kubelet is started with "external" cloud provider, this taint is set on a node to mark it as unusable. After a controller from the cloud provider initializes this node, the kubelet removes this taint.
 
 ```bash
 # kubectl describe nodes | egrep "Taints:|Name:"
@@ -66,15 +61,28 @@ Name:               k8s-node4
 Taints:             node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
 ```
 
+## Installing the Chart using Helm 3.0+
+
+To add the Helm Stable Charts for cloud-provider-vsphere, you can run the following command:
+
+```bash
+helm repo add vsphere-cpi https://kubernetes.github.io/cloud-provider-vsphere
+helm repo update
+```
+
+See [help repo](https://helm.sh/docs/helm/helm_repo/) for command documentation.
+
 ## Deploying vSphere CPI for Simple Configurations
 
 If your vSphere environment contains only a single vCenter Server where the default `vsphere.conf` is acceptable, this section should be sufficient for your deployment needs. You can deploy the Helm Chart for vSphere CPI using the follwing single Helm command:
 
 ```bash
-# helm install vsphere-cpi stable/vsphere-cpi --set config.enabled=true --set config.vcenter=vCenterIPOrFQDN --set config.username=vCenterUsername --set config.password=vCenterPassword --set config.datacenter=vCenterDatacenter
+# helm upgrade --install vsphere-cpi vsphere-cpi/vsphere-cpi --namespace kube-system --set config.enabled=true --set config.vcenter=<vCenter IP> --set config.username=<vCenter Username> --set config.password=<vCenter Password> --set config.datacenter=<vCenter Datacenter>
 ```
 
-Here is a description of the fields used in the vsphere.conf configmap.
+Here we use the '--set' flag to override values in a chart and pass configuration from the command line.
+
+The following is a description of the fields used in the vsphere.conf configmap:
 
 * `config.enabled` should be set to true to enable the functionality to create the configMap and secret
 * `config.vcenter` the IP address or FQDN for your vCenter Server should be specified here
@@ -112,6 +120,10 @@ datacenters = "hr"
 datacenters = "engineering"
 secret-name = "cpi-engineering-secret"
 secret-namespace = "kube-system"
+
+[Labels]
+region = "k8s-region"
+zone = "k8s-zone"
 
 EOF
 ```
@@ -201,7 +213,7 @@ stringData:
 Once the `configMap` and `secret` have been created, deploy the Helm Chart for vSphere CPI by running the following command:
 
 ```bash
-# helm install vsphere-cpi stable/vsphere-cpi
+# helm install vsphere-cpi vsphere-cpi/vsphere-cpi
 ```
 
 ### Verify that the CPI has been successfully deployed
@@ -212,10 +224,10 @@ You can verify the vSphere CPI deployed succesfully by listing the Helm Charts c
 # helm list
 ```
 
-Next verify vsphere-cloud-controller-manager is running and all other system pods are up and running (note that the coredns pods were not running previously - they should be running now as the taints have been removed by installing the CPI):
+Next verify **vsphere-cloud-controller-manager** is running and all other system pods are up and running (note that the coredns pods were not running previously - they should be running now as the taints have been removed by installing the CPI):
 
 ```bash
-# kubectl get pods --namespace=kube-system
+# kubectl get pods -n kube-system
 NAME                                     READY   STATUS    RESTARTS   AGE
 coredns-fb8b8dccf-bq7qq                  1/1     Running   0          71m
 coredns-fb8b8dccf-r47q2                  1/1     Running   0          71m
@@ -238,7 +250,7 @@ vsphere-cloud-controller-manager-549hb   1/1     Running   0          25s
 
 ### Check that all nodes are untainted
 
-Verify node.cloudprovider.kubernetes.io/uninitialized taint is removed from all nodes.
+Verify `node.cloudprovider.kubernetes.io/uninitialized` taint is removed from all nodes.
 
 ```bash
 # kubectl describe nodes | egrep "Taints:|Name:"
@@ -263,7 +275,8 @@ You may now remove the `vsphere.conf` file created at `/etc/kubernetes/`.
 To uninstall/delete the vsphere-cpi deployment:
 
 ```bash
-# helm delete vsphere-cpi
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
 ```
 
 You can delete the `configMap` and `secret` for the vSphere CPI if they are no longer needed.
