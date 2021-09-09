@@ -303,3 +303,9 @@ push-ci-image:
 
 print-ci-image:
 	@$(MAKE) --no-print-directory -C hack/images/ci print
+
+## --------------------------------------
+## Openshift specific include
+## --------------------------------------
+
+include openshift.mk
