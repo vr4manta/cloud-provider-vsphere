@@ -18,6 +18,9 @@ export BIN_OUT ?= $(BUILD_OUT)/bin
 # test grid at the end of a Prow job.
 export ARTIFACTS ?= $(BUILD_OUT)/artifacts
 
+# BRANCH_NAME is the name of current branch.
+export BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
+
 -include hack/make/docker.mk
 
 ################################################################################
@@ -206,7 +209,7 @@ endif
 TEST_FLAGS ?= -v
 .PHONY: unit build-unit-tests
 unit unit-test:
-	curl -L https://go.kubebuilder.io/dl/2.3.1/${GOOS}/${GOARCH} | tar -xz -C /tmp/
+	curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_${GOOS}_${GOARCH}.tar.gz | tar -xz -C /tmp/
 	mv /tmp/kubebuilder_2.3.1_${GOOS}_${GOARCH} /usr/local/kubebuilder
 	export PATH=$PATH:/usr/local/kubebuilder/bin
 	env -u VSPHERE_SERVER -u VSPHERE_PASSWORD -u VSPHERE_USER go test $(TEST_FLAGS) -tags=unit $(PKGS_WITH_TESTS)
@@ -303,6 +306,29 @@ push-ci-image:
 
 print-ci-image:
 	@$(MAKE) --no-print-directory -C hack/images/ci print
+
+################################################################################
+##                                  CODE-GEN                                  ##
+################################################################################
+.PHONY: update-codegen verify-codegen
+update-codegen:
+	hack/update-codegen.sh
+verify-codegen:
+	hack/verify-codegen.sh
+
+################################################################################
+##                                  HELPERS                                  ##
+################################################################################
+.PHONY: squash
+squash:
+	hack/git-squash.sh $(MESSAGE)
+
+.PHONY: docker-image
+docker-image:
+	docker build \
+	-f cluster/images/controller-manager/Dockerfile \
+	-t "$(IMAGE):$(BRANCH_NAME)" . \
+
 
 ## --------------------------------------
 ## Openshift specific include
