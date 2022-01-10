@@ -8,7 +8,7 @@ This chart deploys all components required to run the external vSphere CPI as de
 
 ## Prerequisites
 
-- Has been tested on Kubernetes 1.21.X+
+- Has been tested on Kubernetes 1.22.X+
 - Assumes your Kubernetes cluster has been configured to use the external cloud provider. Please take a look at configuration guidelines located in the [Kubernetes documentation](https://kubernetes.io/docs/tasks/administer-cluster/running-cloud-controller/#running-cloud-controller-manager).
 
 ## Installing the Chart using Helm 3.0+
@@ -94,15 +94,18 @@ The following table lists the configurable parameters of the vSphere CPI chart a
 | `podSecurityPolicy.enabled`              | Enable pod sec policy (k8s > 1.17)  |  true                                  |
 | `podSecurityPolicy.annotations`          | Annotations for pd sec policy       |  nil                                   |
 | `securityContext.enabled`                | Enable sec context for container    |  false                                 |
-| `securityContext.runAsUser`              | RunAsUser. Default is `nobody` in   |  1001                                 |
+| `securityContext.runAsUser`              | RunAsUser. Default is `nobody` in   |  1001                                  |
 |                                          |    distroless image                 |                                        |
-| `securityContext.fsGroup`                | FsGroup. Default is `nobody` in     |  1001                                 |
+| `securityContext.fsGroup`                | FsGroup. Default is `nobody` in     |  1001                                  |
 |                                          |    distroless image                 |                                        |
 | `config.enabled`                         | Create a simple single VC config    |  false                                 |
+| `config.name`                            | Name of the created VC configmap    |  false                                 |
 | `config.vcenter`                         | FQDN or IP of vCenter               |  vcenter.local                         |
 | `config.username`                        | vCenter username                    |  user                                  |
 | `config.password`                        | vCenter password                    |  pass                                  |
 | `config.datacenter`                      | Datacenters within the vCenter      |  dc                                    |
+| `config.secret.create`                   | Create secret for VC config         |  true                                  |
+| `config.secret.name`                     | Name of the created VC secret       |  vsphere-cloud-secret                  |
 | `rbac.create`                            | Create roles and role bindings      |  true                                  |
 | `serviceAccount.create`                  | Create the service account          |  true                                  |
 | `serviceAccount.name`                    | Name of the created service account |  cloud-controller-manager              |

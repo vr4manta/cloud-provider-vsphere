@@ -14,7 +14,7 @@
 ##                               BUILD ARGS                                   ##
 ################################################################################
 # This build arg allows the specification of a custom Golang image.
-ARG GOLANG_IMAGE=golang:1.16.7
+ARG GOLANG_IMAGE=golang:1.17.5
 
 # The distroless image on which the CPI manager image is built.
 #
@@ -33,7 +33,7 @@ ARG DISTROLESS_IMAGE=gcr.io/distroless/static@sha256:9b60270ec0991bc4f14bda475e8
 FROM ${GOLANG_IMAGE} as builder
 
 # This build arg is the version to embed in the CPI binary
-ARG VERSION=unknown
+ARG VERSION=1.22.3
 
 # This build arg controls the GOPROXY setting
 ARG GOPROXY
@@ -44,7 +44,7 @@ COPY pkg/    pkg/
 COPY cmd/    cmd/
 ENV CGO_ENABLED=0
 ENV GOPROXY ${GOPROXY:-https://proxy.golang.org}
-RUN go build -a -ldflags='-w -s -extldflags=static -X main.version=${VERSION}' -o vsphere-cloud-controller-manager ./cmd/vsphere-cloud-controller-manager
+RUN go build -a -ldflags="-w -s -extldflags=static -X main.version=${VERSION}" -o vsphere-cloud-controller-manager ./cmd/vsphere-cloud-controller-manager
 
 ################################################################################
 ##                               MAIN STAGE                                   ##
