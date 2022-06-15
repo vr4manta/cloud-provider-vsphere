@@ -9,7 +9,6 @@ metadata:
     tier: control-plane
   namespace: {{ .Release.Namespace }}
   annotations:
-    scheduler.alpha.kubernetes.io/critical-pod: ""
     {{- if .Values.daemonset.annotations }}
     {{- toYaml .Values.daemonset.annotations | nindent 4 }}
     {{- end }}
@@ -41,7 +40,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- else }}
-        node-role.kubernetes.io/control-plane: "true"
+        node-role.kubernetes.io/control-plane: ""
       {{- end }}
       tolerations:
       - key: node.cloudprovider.kubernetes.io/uninitialized
@@ -66,6 +65,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       hostNetwork: true
       dnsPolicy: {{ .Values.daemonset.dnsPolicy }}
+      priorityClassName: system-node-critical
       containers:
       - name: {{ template "cpi.name" . }}
         image: {{ .Values.daemonset.image }}:{{ .Values.daemonset.tag }}
