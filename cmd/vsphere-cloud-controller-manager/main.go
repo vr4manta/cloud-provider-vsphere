@@ -229,8 +229,12 @@ func initializeWatch(_ *appconfig.CompletedConfig, cloudConfigPath string) (watc
 			case err := <-watch.Errors:
 				klog.Warningf("watcher receives err: %v\n", err)
 			case event := <-watch.Events:
-				klog.Fatalf("config map %s has been updated, restarting pod, received event %v\n", cloudConfigPath, event)
-				stopCh <- struct{}{}
+				if event.Op != fsnotify.Chmod {
+					klog.Fatalf("config map %s has been updated, restarting pod, received event %v\n", cloudConfigPath, event)
+					stopCh <- struct{}{}
+				} else {
+					klog.V(5).Infof("watcher receives %s on the cloud config\n", event.Op.String())
+				}
 			}
 		}
 	}()
@@ -259,5 +263,6 @@ func initializeCloud(config *appconfig.CompletedConfig, cloudProvider string) cl
 			klog.Fatalf("no ClusterID found.  A ClusterID is required for the cloud provider to function properly.  This check can be bypassed by setting the allow-untagged-cloud option")
 		}
 	}
+
 	return cloud
 }

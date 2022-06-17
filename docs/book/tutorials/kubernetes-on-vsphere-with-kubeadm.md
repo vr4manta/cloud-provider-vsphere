@@ -556,7 +556,7 @@ In the example `vsphere.conf` above, there are two configured [Kubernetes secret
 
 An example [Secrets YAML](https://github.com/kubernetes/cloud-provider-vsphere/raw/master/manifests/controller-manager/vccm-secret.yaml) can be used for reference when creating your own `secrets`. If the example secret YAML is used, update the secret name to use a `<unique secret name>`, the vCenter IP address in the keys of `stringData`, and the `username` and `password` for each key.
 
-The secret for the vCenter at `1.1.1.1` might look like the following:
+The secret for the vCenter at `10.0.0.1` might look like the following:
 
 ```yaml
 apiVersion: v1
@@ -600,7 +600,7 @@ stringData:
 
 ### Zones and Regions for Pod and Volume Placement - CPI
 
-Kubernetes allows you to place Pods and Persistent Volumes on specific parts of the underlying infrastructure, e.g. different DataCenters or different vCenters, using the concept of Zones and Regions. However, to use placement controls, the required configuration steps needs to be put in place at Kubernetes deployment time, and require additional settings in the vSphere.conf of both the CPI and CSI. For more information on how to implement zones/regions support, [there is a zones/regions tutorial on how to do it here](https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/tutorials/deploying_cpi_and_csi_with_multi_dc_vc_aka_zones.md).
+Kubernetes allows you to place Pods and Persistent Volumes on specific parts of the underlying infrastructure, e.g. different DataCenters or different vCenters, using the concept of Zones and Regions. However, to use placement controls, the required configuration steps needs to be put in place at Kubernetes deployment time, and require additional settings in the vSphere.conf of both the CPI and CSI. For more information on how to implement zones/regions support, [there is a zones/regions tutorial on how to do it here](https://cloud-provider-vsphere.sigs.k8s.io/tutorials/deploying_cpi_with_multi_dc_vc_aka_zones.html).
 
 If you are not interested in K8s object placement, this section can be ignored, and you can proceed with the remaining CPI setup steps.
 
