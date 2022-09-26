@@ -153,3 +153,7 @@ zz_generated.openapi.go
 
 # binaries
 /vsphere-cloud-controller-manager
+
+
+# Openshift specific exclusions
+!*.assembly.stream.json
