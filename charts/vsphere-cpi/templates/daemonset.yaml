@@ -40,7 +40,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- else }}
-        node-role.kubernetes.io/control-plane: ""
+        node-role.kubernetes.io/control-plane: "true"
       {{- end }}
       tolerations:
       - key: node.cloudprovider.kubernetes.io/uninitialized
@@ -48,6 +48,10 @@ spec:
         effect: NoSchedule
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+        operator: Exists
       - key: node.kubernetes.io/not-ready
         effect: NoSchedule
         operator: Exists
@@ -77,16 +81,6 @@ spec:
           {{- range $key, $value := .Values.daemonset.cmdline.additionalParams }}
           - --{{ $key }}{{ if $value }}={{ $value }}{{ end }}
           {{- end }}
-        {{- if .Values.service.enabled }}
-        env:
-          - name: VSPHERE_API_DISABLE
-            value: "true"
-          - name: VSPHERE_API_BINDING
-            value: {{ template "api.binding" . }}
-        ports:
-        - containerPort: {{ .Values.service.endpointPort }}
-          protocol: TCP
-        {{- end }}
         volumeMounts:
           - mountPath: {{ .Values.daemonset.cmdline.cloudConfig.dir }}
             name: vsphere-config-volume

@@ -184,6 +184,28 @@ func TestCreateVMService(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCreateVMServiceWithLegacySelector(t *testing.T) {
+	testK8sService, vms, _ := initTest()
+	ports, _ := findPorts(testK8sService)
+	expectedSpec := vmopv1alpha1.VirtualMachineServiceSpec{
+		Type:  vmopv1alpha1.VirtualMachineServiceTypeLoadBalancer,
+		Ports: ports,
+		Selector: map[string]string{
+			LegacyClusterSelectorKey: testClustername,
+			LegacyNodeSelectorKey:    NodeRole,
+		},
+	}
+
+	IsLegacy = true
+	vmServiceObj, err := vms.Create(context.Background(), testK8sService, testClustername)
+	assert.NoError(t, err)
+	assert.Equal(t, (*vmServiceObj).Spec, expectedSpec)
+
+	err = vms.Delete(context.Background(), testK8sService, testClustername)
+	assert.NoError(t, err)
+	IsLegacy = false
+}
+
 func TestCreateVMService_ZeroNodeport(t *testing.T) {
 	_, vms, _ := initTest()
 	k8sService := &v1.Service{
@@ -386,19 +408,19 @@ func TestCreateOrUpdateVMService(t *testing.T) {
 func TestCreateOrUpdateVMService_RedefineGetFunc(t *testing.T) {
 	testCases := []struct {
 		name        string
-		getFunc     func(ctx context.Context, key client.ObjectKey, obj client.Object) error
+		getFunc     func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 		expectedErr error
 	}{
 		{
 			name: "failed to create VirtualMachineService",
-			getFunc: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+			getFunc: func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				return fmt.Errorf("failed to get VirtualMachineService")
 			},
 			expectedErr: ErrGetVMService,
 		},
 		{
 			name: "when VMService does not exist",
-			getFunc: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+			getFunc: func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				return apierrors.NewNotFound(v1alpha1.Resource("virtualmachineservice"), testClustername)
 			},
 			expectedErr: ErrVMServiceIPNotFound,

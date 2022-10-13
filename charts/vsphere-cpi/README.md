@@ -124,14 +124,6 @@ The following table lists the configurable parameters of the vSphere CPI chart a
 | `daemonset.podLabels`                    | Labels for CPI pod                  |  nil                                   |
 | `daemonset.nodeSelector`                 | User-defined node selectors         |  nil                                   |
 | `daemonset.tolerations`                  | User-defined tolerations            |  nil                                   |
-| `service.enabled`                        | Enabled the CPI API endpoint        |  false                                 |
-| `service.annotations`                    | Annotations for API service         |  nil                                   |
-| `service.type`                           | Service type                        |  ClusterIP                             |
-| `service.loadBalancerSourceRanges`       | list of IP CIDRs allowed access     | `[]`                                   |
-| `service.endpointPort`                   | External accessible port            |  43001                                 |
-| `service.targetPort`                     | Internal API port                   |  43001                                 |
-| `ingress.enabled`                        | Allow external traffic access       |  false                                 |
-| `ingress.annotations`                    | Annotations for Ingress             |  nil                                   |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install` using Helm v3.X. For example,
 
@@ -157,15 +149,18 @@ helm repo add vsphere-cpi https://kubernetes.github.io/cloud-provider-vsphere
 helm repo update
 
 # Package CPI Chart
+VERSION=1.24.2
 cd charts
-helm package vsphere-cpi
+helm package vsphere-cpi --version $VERSION --app-version $VERSION
 
-# Debug
-helm upgrade --install vsphere-cpi vsphere-cpi/vsphere-cpi --namespace kube-system --debug
+# Debug by installing local helm manifest
+helm upgrade --install vsphere-cpi vsphere-cpi --namespace kube-system --debug
 
 # Update repo index
 cd ..
 helm repo index . --url https://kubernetes.github.io/cloud-provider-vsphere
+
+# Need to modify the path to the github release path
 
 # Push to master and gh-pages
 git add .
