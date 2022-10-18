@@ -132,8 +132,14 @@ function push_images() {
 
   login
 
-  echo "pushing ${CPI_IMAGE_NAME}:${VERSION}"
-  docker push "${CPI_IMAGE_NAME}":"${VERSION}"
+  existing_tags=$(gcloud container images list-tags --filter="tags:${VERSION}" --format=json "${CPI_IMAGE_NAME}")
+
+  if [[ "$existing_tags" != "[]" ]]; then
+    echo "${CPI_IMAGE_NAME}:${VERSION} already exists, skip pushing"
+  else
+    echo "pushing ${CPI_IMAGE_NAME}:${VERSION}"
+    docker push "${CPI_IMAGE_NAME}":"${VERSION}"
+  fi
 }
 
 function build_ccm_bin() {
@@ -148,10 +154,14 @@ function sha_sum() {
 function push_ccm_bin() {
   local bucket="vsphere-cpi-${BUILD_RELEASE_TYPE}"
 
-  sha_sum ".build/bin/vsphere-cloud-controller-manager.linux_amd64"
-  echo "copying ccm version ${VERSION} to ${bucket}"
-  gsutil cp ".build/bin/vsphere-cloud-controller-manager.linux_amd64" "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager"
-  gsutil cp ".build/bin/vsphere-cloud-controller-manager.linux_amd64.sha256" "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager.sha256"
+  if gsutil -q stat "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager"; then
+    echo "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager exists, skip pushing"
+  else
+    sha_sum ".build/bin/vsphere-cloud-controller-manager.linux_amd64"
+    echo "copying ccm version ${VERSION} to ${bucket}"
+    gsutil cp ".build/bin/vsphere-cloud-controller-manager.linux_amd64" "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager"
+    gsutil cp ".build/bin/vsphere-cloud-controller-manager.linux_amd64.sha256" "gs://${bucket}/${VERSION}/bin/linux/amd64/vsphere-cloud-controller-manager.sha256"
+  fi
 }
 
 # Start of main script

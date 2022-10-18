@@ -18,10 +18,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-source ./openshift-hack/go-get-tool.sh
-
 REPO_ROOT=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
 OPENSHIFT_CI=${OPENSHIFT_CI:-""}
+LOCAL_BINARIES_PATH=$REPO_ROOT/.build
 
 # Change directories to the parent directory of the one in which this
 # script is located.
@@ -30,7 +29,7 @@ cd "$REPO_ROOT"
 function runGoimports() {
     # Goimports acting like gofmt. So, no need to rum fmt separately
     local GOIMPORTS_PATH=$LOCAL_BINARIES_PATH/goimports
-    go-get-tool "$GOIMPORTS_PATH" golang.org/x/tools/cmd/goimports
+    GOBIN=$LOCAL_BINARIES_PATH go install -mod=readonly golang.org/x/tools/cmd/goimports@latest
     $GOIMPORTS_PATH -e -w ./cmd/ ./pkg/
     echo "fmt and goimports done"
 }

@@ -18,9 +18,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-source ./openshift-hack/go-get-tool.sh
 
 REPO_ROOT=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
+LOCAL_BINARIES_PATH=$REPO_ROOT/.build
 OPENSHIFT_CI=${OPENSHIFT_CI:-""}
 
 # Change directories to the parent directory of the one in which this
@@ -29,7 +29,7 @@ cd "$REPO_ROOT"
 
 function runGolint() {
     local GOLINT_PATH=$LOCAL_BINARIES_PATH/golint
-    go-get-tool "$GOLINT_PATH" golang.org/x/lint/golint
+    GOBIN=$LOCAL_BINARIES_PATH go install -mod=readonly golang.org/x/lint/golint@latest
     $GOLINT_PATH -set_exit_status ./pkg/... ./cmd/...
     echo "Done golint"
 }
