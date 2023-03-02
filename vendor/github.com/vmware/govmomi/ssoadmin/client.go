@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 VMware, Inc. All Rights Reserved.
+Copyright (c) 2018-2022 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package ssoadmin
 
 import (
 	"context"
+	"math"
 	"path"
 	"reflect"
 	"strings"
@@ -82,7 +83,7 @@ func NewClient(ctx context.Context, c *vim25.Client) (*Client, error) {
 		Client:       sc,
 		RoundTripper: sc,
 		Domain:       "vsphere.local", // Default
-		Limit:        100,
+		Limit:        math.MaxInt32,
 	}
 	if url != Path {
 		admin.Domain = path.Base(url)
@@ -143,6 +144,16 @@ func (c *Client) CreateSolutionUser(ctx context.Context, name string, details ty
 	}
 
 	_, err := methods.CreateLocalSolutionUser(ctx, c, &req)
+	return err
+}
+
+func (c *Client) UpdateLocalPasswordPolicy(ctx context.Context, policy types.AdminPasswordPolicy) error {
+	req := types.UpdateLocalPasswordPolicy{
+		This:   c.ServiceContent.PasswordPolicyService,
+		Policy: policy,
+	}
+
+	_, err := methods.UpdateLocalPasswordPolicy(ctx, c, &req)
 	return err
 }
 
@@ -363,6 +374,38 @@ func (c *Client) FindGroups(ctx context.Context, search string) ([]types.AdminGr
 	return res.Returnval, nil
 }
 
+func (c *Client) FindUsersInGroup(ctx context.Context, name string, search string) ([]types.AdminUser, error) {
+	req := types.FindUsersInGroup{
+		This:         c.ServiceContent.PrincipalDiscoveryService,
+		GroupId:      c.parseID(name),
+		SearchString: search,
+		Limit:        c.Limit,
+	}
+
+	res, err := methods.FindUsersInGroup(ctx, c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Returnval, nil
+}
+
+func (c *Client) FindGroupsInGroup(ctx context.Context, name string, search string) ([]types.AdminGroup, error) {
+	req := types.FindGroupsInGroup{
+		This:         c.ServiceContent.PrincipalDiscoveryService,
+		GroupId:      c.parseID(name),
+		SearchString: search,
+		Limit:        c.Limit,
+	}
+
+	res, err := methods.FindGroupsInGroup(ctx, c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Returnval, nil
+}
+
 func (c *Client) FindParentGroups(ctx context.Context, id types.PrincipalId, groups ...types.PrincipalId) ([]types.PrincipalId, error) {
 	if len(groups) == 0 {
 		req := types.FindAllParentGroups{
@@ -377,6 +420,19 @@ func (c *Client) FindParentGroups(ctx context.Context, id types.PrincipalId, gro
 	}
 
 	return nil, nil
+}
+
+func (c *Client) GetLocalPasswordPolicy(ctx context.Context) (*types.AdminPasswordPolicy, error) {
+	req := types.GetLocalPasswordPolicy{
+		This: c.ServiceContent.PasswordPolicyService,
+	}
+
+	res, err := methods.GetLocalPasswordPolicy(ctx, c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
 }
 
 func (c *Client) Login(ctx context.Context) error {
@@ -440,4 +496,17 @@ func (c *Client) RevokeWSTrustRole(ctx context.Context, id types.PrincipalId, ro
 	}
 
 	return res.Returnval, nil
+}
+
+func (c *Client) IdentitySources(ctx context.Context) (*types.IdentitySources, error) {
+	req := types.Get{
+		This: c.ServiceContent.IdentitySourceManagementService,
+	}
+
+	res, err := methods.Get(ctx, c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Returnval, nil
 }
