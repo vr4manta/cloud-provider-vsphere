@@ -1,4 +1,4 @@
-/* Copyright © 2019 VMware, Inc. All Rights Reserved.
+/* Copyright © 2019-2020 VMware, Inc. All Rights Reserved.
    SPDX-License-Identifier: BSD-2-Clause */
 
 package protocol
@@ -94,7 +94,7 @@ type OperationRestMetadata struct {
 	// Map from result field name to http header name
 	resultHeadersNameMap map[string]string
 	// Map from error field name to http header name
-	errorHeadersNameMap map[string]string
+	errorHeadersNameMap map[string]map[string]string
 }
 
 func NewOperationRestMetadata(
@@ -114,7 +114,7 @@ func NewOperationRestMetadata(
 	resultHeadersNameMap map[string]string,
 	successCode int,
 	responseBodyName string,
-	errorHeadersNameMap map[string]string,
+	errorHeadersNameMap map[string]map[string]string,
 	errorCodeMap map[string]int) OperationRestMetadata {
 
 	return OperationRestMetadata{
@@ -205,7 +205,7 @@ func (meta OperationRestMetadata) ErrorCodeMap() map[string]int {
 func (meta OperationRestMetadata) ResultHeadersNameMap() map[string]string {
 	return meta.resultHeadersNameMap
 }
-func (meta OperationRestMetadata) ErrorHeadersNameMap() map[string]string {
+func (meta OperationRestMetadata) ErrorHeadersNameMap() map[string]map[string]string {
 	return meta.errorHeadersNameMap
 }
 
@@ -215,7 +215,7 @@ func (meta OperationRestMetadata) GetUrlPath(
 	urlPath := meta.urlTemplate
 	// Substitute path variables with values in the template
 	for fieldName, fields := range pathVariableFields {
-		val := url.QueryEscape(strings.Join(fields, ""))
+		val := url.PathEscape(strings.Join(fields, ""))
 		urlPath = strings.Replace(urlPath, fmt.Sprintf("{%s}", fieldName), val, 1)
 	}
 
@@ -230,8 +230,11 @@ func (meta OperationRestMetadata) GetUrlPath(
 	// Add other operation query parameters
 	for fieldName, fieldStr := range queryParamFields {
 		for _, e := range fieldStr {
-			qpKey := url.QueryEscape(fieldName)
-			qpVal := url.QueryEscape(e)
+			// use PathEscape instead of QueryEscape as QueryEscape does not follow VAPI REST standard
+			// most significantly it escapes space characters with '+' sign.
+			// Most probably it follows this standard instead https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1
+			qpKey := url.PathEscape(fieldName)
+			qpVal := url.PathEscape(e)
 			qparam := fmt.Sprintf("%s=%s", qpKey, qpVal)
 			queryPrams = append(queryPrams, qparam)
 		}

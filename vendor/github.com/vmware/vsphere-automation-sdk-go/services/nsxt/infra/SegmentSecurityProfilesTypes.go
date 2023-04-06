@@ -1,34 +1,30 @@
-/* Copyright © 2019 VMware, Inc. All Rights Reserved.
-   SPDX-License-Identifier: BSD-2-Clause */
+// Copyright © 2019-2021 VMware, Inc. All Rights Reserved.
+// SPDX-License-Identifier: BSD-2-Clause
 
-// Code generated. DO NOT EDIT.
+// Auto generated code. DO NOT EDIT.
 
-/*
- * Data type definitions file for service: SegmentSecurityProfiles.
- * Includes binding types of a structures and enumerations defined in the service.
- * Shared by client-side stubs and server-side skeletons to ensure type
- * compatibility.
- */
+// Data type definitions file for service: SegmentSecurityProfiles.
+// Includes binding types of a structures and enumerations defined in the service.
+// Shared by client-side stubs and server-side skeletons to ensure type
+// compatibility.
 
 package infra
 
 import (
-	"reflect"
-	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/bindings"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/data"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/protocol"
+	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
+	"reflect"
 )
-
-
-
-
 
 func segmentSecurityProfilesDeleteInputType() bindings.StructType {
 	fields := make(map[string]bindings.BindingType)
 	fieldNameMap := make(map[string]string)
 	fields["segment_security_profile_id"] = bindings.NewStringType()
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
+	fieldNameMap["override"] = "Override"
 	var validators = []bindings.Validator{}
 	return bindings.NewStructType("operation-input", fields, reflect.TypeOf(data.StructValue{}), fieldNameMap, validators)
 }
@@ -47,12 +43,16 @@ func segmentSecurityProfilesDeleteRestMetadata() protocol.OperationRestMetadata 
 	dispatchHeaderParams := map[string]string{}
 	bodyFieldsMap := map[string]string{}
 	fields["segment_security_profile_id"] = bindings.NewStringType()
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
+	fieldNameMap["override"] = "Override"
 	paramsTypeMap["segment_security_profile_id"] = bindings.NewStringType()
+	paramsTypeMap["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	paramsTypeMap["segmentSecurityProfileId"] = bindings.NewStringType()
 	pathParams["segment_security_profile_id"] = "segmentSecurityProfileId"
+	queryParams["override"] = "override"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -71,7 +71,7 @@ func segmentSecurityProfilesDeleteRestMetadata() protocol.OperationRestMetadata 
 		204,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func segmentSecurityProfilesGetInputType() bindings.StructType {
@@ -102,7 +102,7 @@ func segmentSecurityProfilesGetRestMetadata() protocol.OperationRestMetadata {
 	paramsTypeMap["segmentSecurityProfileId"] = bindings.NewStringType()
 	pathParams["segment_security_profile_id"] = "segmentSecurityProfileId"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -121,7 +121,7 @@ func segmentSecurityProfilesGetRestMetadata() protocol.OperationRestMetadata {
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func segmentSecurityProfilesListInputType() bindings.StructType {
@@ -181,7 +181,7 @@ func segmentSecurityProfilesListRestMetadata() protocol.OperationRestMetadata {
 	queryParams["include_mark_for_delete_objects"] = "include_mark_for_delete_objects"
 	queryParams["page_size"] = "page_size"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -200,7 +200,7 @@ func segmentSecurityProfilesListRestMetadata() protocol.OperationRestMetadata {
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func segmentSecurityProfilesPatchInputType() bindings.StructType {
@@ -208,8 +208,10 @@ func segmentSecurityProfilesPatchInputType() bindings.StructType {
 	fieldNameMap := make(map[string]string)
 	fields["segment_security_profile_id"] = bindings.NewStringType()
 	fields["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
 	fieldNameMap["segment_security_profile"] = "SegmentSecurityProfile"
+	fieldNameMap["override"] = "Override"
 	var validators = []bindings.Validator{}
 	return bindings.NewStructType("operation-input", fields, reflect.TypeOf(data.StructValue{}), fieldNameMap, validators)
 }
@@ -229,14 +231,18 @@ func segmentSecurityProfilesPatchRestMetadata() protocol.OperationRestMetadata {
 	bodyFieldsMap := map[string]string{}
 	fields["segment_security_profile_id"] = bindings.NewStringType()
 	fields["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
 	fieldNameMap["segment_security_profile"] = "SegmentSecurityProfile"
+	fieldNameMap["override"] = "Override"
 	paramsTypeMap["segment_security_profile_id"] = bindings.NewStringType()
+	paramsTypeMap["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	paramsTypeMap["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
 	paramsTypeMap["segmentSecurityProfileId"] = bindings.NewStringType()
 	pathParams["segment_security_profile_id"] = "segmentSecurityProfileId"
+	queryParams["override"] = "override"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -255,7 +261,7 @@ func segmentSecurityProfilesPatchRestMetadata() protocol.OperationRestMetadata {
 		204,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func segmentSecurityProfilesUpdateInputType() bindings.StructType {
@@ -263,8 +269,10 @@ func segmentSecurityProfilesUpdateInputType() bindings.StructType {
 	fieldNameMap := make(map[string]string)
 	fields["segment_security_profile_id"] = bindings.NewStringType()
 	fields["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
 	fieldNameMap["segment_security_profile"] = "SegmentSecurityProfile"
+	fieldNameMap["override"] = "Override"
 	var validators = []bindings.Validator{}
 	return bindings.NewStructType("operation-input", fields, reflect.TypeOf(data.StructValue{}), fieldNameMap, validators)
 }
@@ -284,14 +292,18 @@ func segmentSecurityProfilesUpdateRestMetadata() protocol.OperationRestMetadata 
 	bodyFieldsMap := map[string]string{}
 	fields["segment_security_profile_id"] = bindings.NewStringType()
 	fields["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
+	fields["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	fieldNameMap["segment_security_profile_id"] = "SegmentSecurityProfileId"
 	fieldNameMap["segment_security_profile"] = "SegmentSecurityProfile"
+	fieldNameMap["override"] = "Override"
 	paramsTypeMap["segment_security_profile_id"] = bindings.NewStringType()
+	paramsTypeMap["override"] = bindings.NewOptionalType(bindings.NewBooleanType())
 	paramsTypeMap["segment_security_profile"] = bindings.NewReferenceType(model.SegmentSecurityProfileBindingType)
 	paramsTypeMap["segmentSecurityProfileId"] = bindings.NewStringType()
 	pathParams["segment_security_profile_id"] = "segmentSecurityProfileId"
+	queryParams["override"] = "override"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -310,7 +322,5 @@ func segmentSecurityProfilesUpdateRestMetadata() protocol.OperationRestMetadata 
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
-
-

@@ -1,28 +1,22 @@
-/* Copyright © 2019 VMware, Inc. All Rights Reserved.
-   SPDX-License-Identifier: BSD-2-Clause */
+// Copyright © 2019-2021 VMware, Inc. All Rights Reserved.
+// SPDX-License-Identifier: BSD-2-Clause
 
-// Code generated. DO NOT EDIT.
+// Auto generated code. DO NOT EDIT.
 
-/*
- * Data type definitions file for service: Traceflows.
- * Includes binding types of a structures and enumerations defined in the service.
- * Shared by client-side stubs and server-side skeletons to ensure type
- * compatibility.
- */
+// Data type definitions file for service: Traceflows.
+// Includes binding types of a structures and enumerations defined in the service.
+// Shared by client-side stubs and server-side skeletons to ensure type
+// compatibility.
 
 package infra
 
 import (
-	"reflect"
-	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/bindings"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/data"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/protocol"
+	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
+	"reflect"
 )
-
-
-
-
 
 func traceflowsCreateInputType() bindings.StructType {
 	fields := make(map[string]bindings.BindingType)
@@ -58,7 +52,7 @@ func traceflowsCreateRestMetadata() protocol.OperationRestMetadata {
 	pathParams["traceflow_id"] = "traceflowId"
 	queryParams["action"] = "action"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -77,7 +71,7 @@ func traceflowsCreateRestMetadata() protocol.OperationRestMetadata {
 		201,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func traceflowsDeleteInputType() bindings.StructType {
@@ -108,7 +102,7 @@ func traceflowsDeleteRestMetadata() protocol.OperationRestMetadata {
 	paramsTypeMap["traceflowId"] = bindings.NewStringType()
 	pathParams["traceflow_id"] = "traceflowId"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -127,7 +121,7 @@ func traceflowsDeleteRestMetadata() protocol.OperationRestMetadata {
 		204,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func traceflowsGetInputType() bindings.StructType {
@@ -158,7 +152,7 @@ func traceflowsGetRestMetadata() protocol.OperationRestMetadata {
 	paramsTypeMap["traceflowId"] = bindings.NewStringType()
 	pathParams["traceflow_id"] = "traceflowId"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -177,7 +171,7 @@ func traceflowsGetRestMetadata() protocol.OperationRestMetadata {
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func traceflowsListInputType() bindings.StructType {
@@ -237,7 +231,7 @@ func traceflowsListRestMetadata() protocol.OperationRestMetadata {
 	queryParams["include_mark_for_delete_objects"] = "include_mark_for_delete_objects"
 	queryParams["page_size"] = "page_size"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -256,7 +250,7 @@ func traceflowsListRestMetadata() protocol.OperationRestMetadata {
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func traceflowsPatchInputType() bindings.StructType {
@@ -264,8 +258,10 @@ func traceflowsPatchInputType() bindings.StructType {
 	fieldNameMap := make(map[string]string)
 	fields["traceflow_id"] = bindings.NewStringType()
 	fields["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
+	fields["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	fieldNameMap["traceflow_id"] = "TraceflowId"
 	fieldNameMap["traceflow_config"] = "TraceflowConfig"
+	fieldNameMap["enforcement_point_path"] = "EnforcementPointPath"
 	var validators = []bindings.Validator{}
 	return bindings.NewStructType("operation-input", fields, reflect.TypeOf(data.StructValue{}), fieldNameMap, validators)
 }
@@ -285,14 +281,18 @@ func traceflowsPatchRestMetadata() protocol.OperationRestMetadata {
 	bodyFieldsMap := map[string]string{}
 	fields["traceflow_id"] = bindings.NewStringType()
 	fields["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
+	fields["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	fieldNameMap["traceflow_id"] = "TraceflowId"
 	fieldNameMap["traceflow_config"] = "TraceflowConfig"
+	fieldNameMap["enforcement_point_path"] = "EnforcementPointPath"
+	paramsTypeMap["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	paramsTypeMap["traceflow_id"] = bindings.NewStringType()
 	paramsTypeMap["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
 	paramsTypeMap["traceflowId"] = bindings.NewStringType()
 	pathParams["traceflow_id"] = "traceflowId"
+	queryParams["enforcement_point_path"] = "enforcement_point_path"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -311,7 +311,7 @@ func traceflowsPatchRestMetadata() protocol.OperationRestMetadata {
 		204,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
 
 func traceflowsUpdateInputType() bindings.StructType {
@@ -319,8 +319,10 @@ func traceflowsUpdateInputType() bindings.StructType {
 	fieldNameMap := make(map[string]string)
 	fields["traceflow_id"] = bindings.NewStringType()
 	fields["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
+	fields["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	fieldNameMap["traceflow_id"] = "TraceflowId"
 	fieldNameMap["traceflow_config"] = "TraceflowConfig"
+	fieldNameMap["enforcement_point_path"] = "EnforcementPointPath"
 	var validators = []bindings.Validator{}
 	return bindings.NewStructType("operation-input", fields, reflect.TypeOf(data.StructValue{}), fieldNameMap, validators)
 }
@@ -340,14 +342,18 @@ func traceflowsUpdateRestMetadata() protocol.OperationRestMetadata {
 	bodyFieldsMap := map[string]string{}
 	fields["traceflow_id"] = bindings.NewStringType()
 	fields["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
+	fields["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	fieldNameMap["traceflow_id"] = "TraceflowId"
 	fieldNameMap["traceflow_config"] = "TraceflowConfig"
+	fieldNameMap["enforcement_point_path"] = "EnforcementPointPath"
+	paramsTypeMap["enforcement_point_path"] = bindings.NewOptionalType(bindings.NewStringType())
 	paramsTypeMap["traceflow_id"] = bindings.NewStringType()
 	paramsTypeMap["traceflow_config"] = bindings.NewReferenceType(model.TraceflowConfigBindingType)
 	paramsTypeMap["traceflowId"] = bindings.NewStringType()
 	pathParams["traceflow_id"] = "traceflowId"
+	queryParams["enforcement_point_path"] = "enforcement_point_path"
 	resultHeaders := map[string]string{}
-	errorHeaders := map[string]string{}
+	errorHeaders := map[string]map[string]string{}
 	return protocol.NewOperationRestMetadata(
 		fields,
 		fieldNameMap,
@@ -366,7 +372,5 @@ func traceflowsUpdateRestMetadata() protocol.OperationRestMetadata {
 		200,
 		"",
 		errorHeaders,
-		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400,"com.vmware.vapi.std.errors.unauthorized": 403,"com.vmware.vapi.std.errors.service_unavailable": 503,"com.vmware.vapi.std.errors.internal_server_error": 500,"com.vmware.vapi.std.errors.not_found": 404})
+		map[string]int{"com.vmware.vapi.std.errors.invalid_request": 400, "com.vmware.vapi.std.errors.unauthorized": 403, "com.vmware.vapi.std.errors.service_unavailable": 503, "com.vmware.vapi.std.errors.internal_server_error": 500, "com.vmware.vapi.std.errors.not_found": 404})
 }
-
-
