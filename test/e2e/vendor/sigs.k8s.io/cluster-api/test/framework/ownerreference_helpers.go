@@ -84,8 +84,10 @@ func AssertOwnerReferences(namespace, kubeconfigPath string, assertFuncs ...map[
 	}
 	Eventually(func() error {
 		allErrs := []error{}
-		graph, err := clusterctlcluster.GetOwnerGraph(namespace, kubeconfigPath)
-		Expect(err).To(BeNil())
+		ctx := context.Background()
+
+		graph, err := clusterctlcluster.GetOwnerGraph(ctx, namespace, kubeconfigPath)
+		Expect(err).ToNot(HaveOccurred())
 		for _, v := range graph {
 			if _, ok := allAssertFuncs[v.Object.Kind]; !ok {
 				allErrs = append(allErrs, fmt.Errorf("kind %s does not have an associated ownerRef assertion function", v.Object.Kind))
@@ -118,6 +120,8 @@ var (
 
 // CoreOwnerReferenceAssertion maps Cluster API core types to functions which return an error if the passed
 // OwnerReferences aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var CoreOwnerReferenceAssertion = map[string]func([]metav1.OwnerReference) error{
 	extensionConfigKind: func(owners []metav1.OwnerReference) error {
 		// ExtensionConfig should have no owners.
@@ -161,6 +165,8 @@ var (
 
 // ExpOwnerReferenceAssertions maps experimental types to functions which return an error if the passed OwnerReferences
 // aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var ExpOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 	clusterResourceSetKind: func(owners []metav1.OwnerReference) error {
 		// ClusterResourcesSet doesn't have ownerReferences (it is a clusterctl move-hierarchy root).
@@ -184,6 +190,8 @@ var (
 
 // KubernetesReferenceAssertions maps Kubernetes types to functions which return an error if the passed OwnerReferences
 // aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var KubernetesReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 	secretKind: func(owners []metav1.OwnerReference) error {
 		// Secrets for cluster certificates must be owned by the KubeadmControlPlane. The bootstrap secret should be owned by a KubeadmControlPlane.
@@ -205,6 +213,8 @@ var (
 
 // KubeadmControlPlaneOwnerReferenceAssertions maps Kubeadm control plane types to functions which return an error if the passed
 // OwnerReferences aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var KubeadmControlPlaneOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 	kubeadmControlPlaneKind: func(owners []metav1.OwnerReference) error {
 		// The KubeadmControlPlane must be owned by a Cluster.
@@ -226,6 +236,8 @@ var (
 
 // KubeadmBootstrapOwnerReferenceAssertions maps KubeadmBootstrap types to functions which return an error if the passed OwnerReferences
 // aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var KubeadmBootstrapOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 	kubeadmConfigKind: func(owners []metav1.OwnerReference) error {
 		// The KubeadmConfig must be owned by a Cluster or by a MachinePool.
@@ -248,6 +260,8 @@ var (
 
 // DockerInfraOwnerReferenceAssertions maps Docker Infrastructure types to functions which return an error if the passed
 // OwnerReferences aren't as expected.
+// Note: These relationships are documented in https://github.com/kubernetes-sigs/cluster-api/tree/main/docs/book/src/reference/owner_references.md.
+// That document should be updated if these references change.
 var DockerInfraOwnerReferenceAssertions = map[string]func([]metav1.OwnerReference) error{
 	dockerMachineKind: func(owners []metav1.OwnerReference) error {
 		// The DockerMachine must be owned by a Machine.
@@ -340,8 +354,8 @@ func forceClusterClassReconcile(ctx context.Context, cli client.Client, clusterK
 }
 
 func removeOwnerReferences(ctx context.Context, proxy ClusterProxy, namespace string) {
-	graph, err := clusterctlcluster.GetOwnerGraph(namespace, proxy.GetKubeconfigPath())
-	Expect(err).To(BeNil())
+	graph, err := clusterctlcluster.GetOwnerGraph(ctx, namespace, proxy.GetKubeconfigPath())
+	Expect(err).ToNot(HaveOccurred())
 	for _, object := range graph {
 		ref := object.Object
 		obj := new(unstructured.Unstructured)
@@ -351,7 +365,7 @@ func removeOwnerReferences(ctx context.Context, proxy ClusterProxy, namespace st
 
 		Expect(proxy.GetClient().Get(ctx, client.ObjectKey{Namespace: namespace, Name: object.Object.Name}, obj)).To(Succeed())
 		helper, err := patch.NewHelper(obj, proxy.GetClient())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 		obj.SetOwnerReferences([]metav1.OwnerReference{})
 		Expect(helper.Patch(ctx, obj)).To(Succeed())
 	}

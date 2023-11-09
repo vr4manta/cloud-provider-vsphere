@@ -156,6 +156,9 @@ func (webhook *ClusterClass) validate(ctx context.Context, oldClusterClass, newC
 	// Validate patches.
 	allErrs = append(allErrs, validatePatches(newClusterClass)...)
 
+	// Validate metadata
+	allErrs = append(allErrs, validateClusterClassMetadata(newClusterClass)...)
+
 	// If this is an update run additional validation.
 	if oldClusterClass != nil {
 		// Ensure spec changes are compatible.
@@ -363,5 +366,19 @@ func validateMachineHealthCheckClass(fldPath *field.Path, namepace string, m *cl
 			RemediationTemplate: m.RemediationTemplate,
 		}}
 
-	return mhc.ValidateCommonFields(fldPath)
+	return (&MachineHealthCheck{}).validateCommonFields(&mhc, fldPath)
+}
+
+func validateClusterClassMetadata(clusterClass *clusterv1.ClusterClass) field.ErrorList {
+	var allErrs field.ErrorList
+	allErrs = append(allErrs, clusterClass.Spec.ControlPlane.Metadata.Validate(field.NewPath("spec", "controlPlane", "metadata"))...)
+	workerPath := field.NewPath("spec", "workers", "machineDeployments")
+	for idx, m := range clusterClass.Spec.Workers.MachineDeployments {
+		allErrs = append(allErrs, validateMachineDeploymentMetadata(m, workerPath.Index(idx))...)
+	}
+	return allErrs
+}
+
+func validateMachineDeploymentMetadata(m clusterv1.MachineDeploymentClass, fldPath *field.Path) field.ErrorList {
+	return m.Template.Metadata.Validate(fldPath.Child("template", "metadata"))
 }
