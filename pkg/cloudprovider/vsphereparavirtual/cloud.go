@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
@@ -67,7 +66,7 @@ func init() {
 		}
 
 		// read the config file
-		data, err := ioutil.ReadAll(config)
+		data, err := io.ReadAll(config)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read cloud configuration from %q [%v]", config, err)
 		}
@@ -109,7 +108,7 @@ func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerC
 	}
 
 	cp.client = client
-	cp.informMgr = k8s.NewInformer(client)
+	cp.informMgr = k8s.NewInformer(client, true)
 	cp.ownerReference = ownerRef
 
 	kcfg, err := getRestConfig(SupervisorClusterConfigPath)
