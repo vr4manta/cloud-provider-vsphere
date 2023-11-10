@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/coredns/corefile-migration/migration"
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/pkg/errors"
@@ -140,6 +140,7 @@ func (in *KubeadmControlPlane) ValidateUpdate(old runtime.Object) (admission.War
 	// For example, {"spec", "*"} will allow any path under "spec" to change.
 	allowedPaths := [][]string{
 		{"metadata", "*"},
+		{spec, kubeadmConfigSpec, "useExperimentalRetryJoin"},
 		{spec, kubeadmConfigSpec, clusterConfiguration, "etcd", "local", "imageRepository"},
 		{spec, kubeadmConfigSpec, clusterConfiguration, "etcd", "local", "imageTag"},
 		{spec, kubeadmConfigSpec, clusterConfiguration, "etcd", "local", "extraArgs"},
@@ -329,6 +330,9 @@ func validateKubeadmControlPlaneSpec(s KubeadmControlPlaneSpec, namespace string
 			),
 		)
 	}
+
+	// Validate the metadata of the MachineTemplate
+	allErrs = append(allErrs, s.MachineTemplate.ObjectMeta.Validate(pathPrefix.Child("machineTemplate", "metadata"))...)
 
 	if !version.KubeSemver.MatchString(s.Version) {
 		allErrs = append(allErrs, field.Invalid(pathPrefix.Child("version"), s.Version, "must be a valid semantic version"))
