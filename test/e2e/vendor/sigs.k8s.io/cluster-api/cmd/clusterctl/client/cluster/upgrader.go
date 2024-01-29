@@ -106,8 +106,6 @@ func (u *providerUpgrader) Plan(ctx context.Context) ([]UpgradePlan, error) {
 	// all the providers in the management cluster can upgrade to the latest release supporting v1alpha4, or if available,
 	// all the providers can upgrade to the latest release supporting v1alpha5 (not supported in current clusterctl release,
 	// but upgrade plan should report these options)
-	// Please note that upgrade plan also works on management cluster still in v1alpha3. In this case upgrade plan is shown, but
-	// upgrade to latest version in the v1alpha3 series are not supported using clusterctl v1alpha4 or v1beta1 (use older releases).
 
 	// Gets the upgrade info for the core provider.
 	coreProviders := providerList.FilterCore()
@@ -130,7 +128,6 @@ func (u *providerUpgrader) Plan(ctx context.Context) ([]UpgradePlan, error) {
 
 	// Creates an UpgradePlan for each contract considered for upgrades; each upgrade plans contains
 	// an UpgradeItem for each provider defining the next available version with the target contract, if available.
-	// e.g. v1alpha3, cluster-api --> v0.3.2, kubeadm bootstrap --> v0.3.2, aws --> v0.5.4 (not supported in current clusterctl release, but upgrade plan should report these options).
 	// e.g. v1alpha4, cluster-api --> v0.4.1, kubeadm bootstrap --> v0.4.1, aws --> v0.X.2
 	// e.g. v1alpha4, cluster-api --> v0.5.1, kubeadm bootstrap --> v0.5.1, aws --> v0.Y.4 (not supported in current clusterctl release, but upgrade plan should report these options).
 	ret := make([]UpgradePlan, 0)
@@ -223,7 +220,7 @@ func (u *providerUpgrader) getUpgradePlan(ctx context.Context, providers []clust
 func (u *providerUpgrader) createCustomPlan(ctx context.Context, upgradeItems []UpgradeItem) (*UpgradePlan, error) {
 	// Gets the API Version of Cluster API (contract).
 	// The this is required to ensure all the providers in a management cluster are consistent with the contract supported by the core provider.
-	// e.g if the core provider is v1alpha3, all the provider should be v1alpha3 as well.
+	// e.g if the core provider is v1beta1, all the provider should be v1beta1 as well.
 
 	// The target contract is derived from the current version of the core provider, or, if the core provider is included in the upgrade list,
 	// from its target version.
@@ -352,6 +349,7 @@ func (u *providerUpgrader) getUpgradeComponents(ctx context.Context, provider Up
 
 func (u *providerUpgrader) doUpgrade(ctx context.Context, upgradePlan *UpgradePlan, opts UpgradeOptions) error {
 	// Check for multiple instances of the same provider if current contract is v1alpha3.
+	// TODO(killianmuldoon) Assess if we can remove this piece of code.
 	if upgradePlan.Contract == clusterv1.GroupVersion.Version {
 		if err := u.providerInventory.CheckSingleProviderInstance(ctx); err != nil {
 			return err
@@ -486,7 +484,7 @@ func (u *providerUpgrader) scaleDownProvider(ctx context.Context, provider clust
 
 // scaleDownDeployment scales down a Deployment to 0 and waits until all replicas have been deleted.
 func scaleDownDeployment(ctx context.Context, c client.Client, deploy appsv1.Deployment) error {
-	if err := retryWithExponentialBackoff(newWriteBackoff(), func() error {
+	if err := retryWithExponentialBackoff(ctx, newWriteBackoff(), func(ctx context.Context) error {
 		deployment := &appsv1.Deployment{}
 		if err := c.Get(ctx, client.ObjectKeyFromObject(&deploy), deployment); err != nil {
 			return errors.Wrapf(err, "failed to get Deployment/%s", deploy.GetName())
@@ -513,7 +511,7 @@ func scaleDownDeployment(ctx context.Context, c client.Client, deploy appsv1.Dep
 		Steps:    60,
 		Jitter:   0.4,
 	}
-	if err := retryWithExponentialBackoff(deploymentScaleToZeroBackOff, func() error {
+	if err := retryWithExponentialBackoff(ctx, deploymentScaleToZeroBackOff, func(ctx context.Context) error {
 		deployment := &appsv1.Deployment{}
 		if err := c.Get(ctx, client.ObjectKeyFromObject(&deploy), deployment); err != nil {
 			return errors.Wrapf(err, "failed to get Deployment/%s", deploy.GetName())
