@@ -1,8 +1,6 @@
 module k8s.io/cloud-provider-vsphere
 
-go 1.22.0
-
-toolchain go1.22.1
+go 1.22
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
