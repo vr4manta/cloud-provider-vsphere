@@ -21,7 +21,6 @@ export ARTIFACTS ?= $(BUILD_OUT)/artifacts
 # BRANCH_NAME is the name of current branch.
 export BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
 
--include hack/make/docker.mk
 
 ################################################################################
 ##                             VERIFY GO VERSION                              ##
@@ -45,6 +44,13 @@ ifeq (/src/$(MOD_NAME),$(subst $(GOPATH),,$(PWD)))
 $(warning This project uses Go modules and should not be cloned into the GOPATH)
 endif
 endif
+
+# Use GOPROXY environment variable if set
+GOPROXY := $(shell go env GOPROXY)
+ifeq (,$(strip $(GOPROXY)))
+GOPROXY := https://proxy.golang.org
+endif
+export GOPROXY
 
 ################################################################################
 ##                                DEPENDENCIES                                ##
@@ -249,6 +255,10 @@ $(TOOLING_BINARIES):
 e2e:
 	make -C $(E2E_DIR) run
 
+.PHONY: e2e-latest-k8s-version
+e2e-latest-k8s-version:
+	make -C $(E2E_DIR) run-on-latest-k8s-version
+
 .PHONY: integration-test
 integration-test: | $(DOCKER_SOCK)
 	$(MAKE) -C test/integration
@@ -305,28 +315,12 @@ staticcheck:
 
 vet:
 	hack/check-vet.sh
-################################################################################
-##                                 BUILD IMAGES AND BINARIES                  ##
-################################################################################
-.PHONY: release
-release: | $(DOCKER_SOCK)
-	hack/release.sh
-
-################################################################################
-##                                  PUSH IMAGES AND BINARIES                  ##
-################################################################################
-.PHONY: release-push
-release-push: | $(DOCKER_SOCK)
-	hack/release.sh -p
 
 ################################################################################
 ##                                  CI IMAGE                                  ##
 ################################################################################
 build-ci-image:
 	$(MAKE) -C hack/images/ci build
-
-push-ci-image:
-	$(MAKE) -C hack/images/ci push
 
 print-ci-image:
 	@$(MAKE) --no-print-directory -C hack/images/ci print
@@ -351,11 +345,61 @@ squash:
 docker-image:
 	docker build \
 	-f cluster/images/controller-manager/Dockerfile \
-	-t "$(IMAGE):$(BRANCH_NAME)" . \
+	-t "$(IMAGE):$(BRANCH_NAME)" \
+	--build-arg "VERSION=${VERSION}" . \
 
+################################################################################
+##                            GCP CLOUDBUILD RELEATED                         ##
+################################################################################
+# Define DGCP Cloud build related variables.
+PROD_REGISTRY ?= registry.k8s.io/cloud-pv-vsphere
 
-## --------------------------------------
-## Openshift specific include
-## --------------------------------------
+STAGING_REGISTRY ?= gcr.io/k8s-staging-cloud-pv-vsphere
+STAGING_BUCKET ?= k8s-staging-cloud-pv-vsphere
 
-include openshift.mk
+IMAGE_NAME ?= cloud-provider-vsphere
+VERSION ?=$(shell git describe --dirty --always)
+# Default image registry and image binary path
+IMAGE_PATH := $(STAGING_REGISTRY)/$(IMAGE_NAME):$(VERSION)
+BINARY_PATH := gs://$(STAGING_BUCKET)/$(VERSION)/bin/$(GOOS)/$(GOARCH)
+LOCAL_BINARY_PATH := $(abspath $(BIN_OUT))/vsphere-cloud-controller-manager.$(GOOS)_$(GOARCH)
+
+.PHONY: docker-build-and-push
+docker-build-and-push: 
+	docker build \
+	-f cluster/images/controller-manager/Dockerfile \
+	-t $(IMAGE_PATH) \
+	--build-arg "VERSION=${VERSION}" \
+	--build-arg "GOPROXY=${GOPROXY}" \
+	.
+	docker push "$(IMAGE_PATH)"
+
+.PHONY: ccm-bin-push
+ccm-bin-push:
+	$(shell { sha256sum $(LOCAL_BINARY_PATH) || shasum -a 256 $(LOCAL_BINARY_PATH); } 2>/dev/null > $(LOCAL_BINARY_PATH).sha256)
+	gsutil cp "$(LOCAL_BINARY_PATH)" "$(BINARY_PATH)/vsphere-cloud-controller-manager"
+	gsutil cp "$(LOCAL_BINARY_PATH).sha256" "$(BINARY_PATH)/vsphere-cloud-controller-manager.sha256"
+
+.PHONY: pr-staging
+pr-staging: 
+	$(MAKE) IMAGE_PATH=$(STAGING_REGISTRY)/pr/$(IMAGE_NAME):$(VERSION) docker-build-and-push
+	$(MAKE) build-bins
+	$(MAKE) BINARY_PATH=gs://$(STAGING_BUCKET)/pr/$(VERSION)/bin/$(GOOS)/$(GOARCH) ccm-bin-push
+
+.PHONY: ci-staging
+ci-staging: 
+	$(MAKE) IMAGE_PATH=$(STAGING_REGISTRY)/ci/$(IMAGE_NAME):$(VERSION) docker-build-and-push
+	$(MAKE) build-bins
+	$(MAKE) BINARY_PATH=gs://$(STAGING_BUCKET)/ci/$(VERSION)/bin/$(GOOS)/$(GOARCH) ccm-bin-push
+
+.PHONY: release-staging-nightly
+release-staging-nightly: 
+	$(MAKE) IMAGE_PATH=$(STAGING_REGISTRY)/nightly/$(IMAGE_NAME):$(VERSION)-$(shell date +'%Y%m%d') docker-build-and-push
+	$(MAKE) build-bins
+	$(MAKE) BINARY_PATH=gs://$(STAGING_BUCKET)/nightly/$(VERSION)-$(shell date +'%Y%m%d')/bin/$(GOOS)/$(GOARCH) ccm-bin-push
+
+.PHONY: release-staging
+release-staging: 
+	$(MAKE) docker-build-and-push
+	$(MAKE) build-bins
+	$(MAKE) ccm-bin-push
