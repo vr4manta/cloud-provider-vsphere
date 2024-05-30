@@ -1,11 +1,11 @@
 /*
-Copyright (c) 2017-2021 VMware, Inc. All Rights Reserved.
+Copyright (c) 2017-2024 VMware, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -572,13 +572,18 @@ func (r *Registry) TenantManager() *TenantManager {
 	return r.Get(r.content().TenantManager.Reference()).(*TenantManager)
 }
 
+// ExtensionManager returns the ExtensionManager singleton
+func (r *Registry) ExtensionManager() *ExtensionManager {
+	return r.Get(r.content().ExtensionManager.Reference()).(*ExtensionManager)
+}
+
 func (r *Registry) MarshalJSON() ([]byte, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
 	vars := struct {
-		Objects int
-		Locks   int
+		Objects int `json:"objects"`
+		Locks   int `json:"locks"`
 	}{
 		len(r.objects),
 		len(r.locks),

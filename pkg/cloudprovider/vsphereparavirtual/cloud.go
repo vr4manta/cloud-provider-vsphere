@@ -60,6 +60,9 @@ var (
 
 	// vpcModeEnabled if set to true, ippool and node controller will process v1alpha1 StaticRoute and v1alpha2 IPPool, otherwise v1alpha1 RouteSet and v1alpha1 IPPool
 	vpcModeEnabled bool
+
+	// podIPPoolType specifies if Pod IP addresses are public or private.
+	podIPPoolType string
 )
 
 func init() {
@@ -86,6 +89,7 @@ func init() {
 
 	flag.BoolVar(&vmservice.IsLegacy, "is-legacy-paravirtual", false, "If true, machine label selector will start with capw.vmware.com. By default, it's false, machine label selector will start with capv.vmware.com.")
 	flag.BoolVar(&vpcModeEnabled, "enable-vpc-mode", false, "If true, routable pod controller will start with VPC mode. It is useful only when route controller is enabled in vsphereparavirtual mode")
+	flag.StringVar(&podIPPoolType, "pod-ip-pool-type", "", "Specify if Pod IP address is Public or Private routable in VPC network. Valid values are Public and Private")
 }
 
 // Creates new Controller node interface and returns
@@ -100,6 +104,11 @@ func newVSphereParavirtual(cfg *cpcfg.Config) (*VSphereParavirtual, error) {
 // Initialize initializes the vSphere paravirtual cloud provider.
 func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
 	klog.V(0).Info("Initing vSphere Paravirtual Cloud Provider")
+
+	err := checkPodIPPoolType(vpcModeEnabled, podIPPoolType)
+	if err != nil {
+		klog.Fatalf("Invalid IP pool type: %v", err)
+	}
 
 	ownerRef, err := readOwnerRef(VsphereParavirtualCloudProviderConfigPath)
 	if err != nil {
@@ -148,7 +157,7 @@ func (cp *VSphereParavirtual) Initialize(clientBuilder cloudprovider.ControllerC
 	if RouteEnabled {
 		klog.V(0).Info("Starting routable pod controllers")
 
-		if err := routablepod.StartControllers(kcfg, client, cp.informMgr, ClusterName, clusterNS, ownerRef, vpcModeEnabled); err != nil {
+		if err := routablepod.StartControllers(kcfg, client, cp.informMgr, ClusterName, clusterNS, ownerRef, vpcModeEnabled, podIPPoolType); err != nil {
 			klog.Errorf("Failed to start Routable pod controllers: %v", err)
 		}
 	}

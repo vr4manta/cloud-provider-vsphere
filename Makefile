@@ -21,7 +21,6 @@ export ARTIFACTS ?= $(BUILD_OUT)/artifacts
 # BRANCH_NAME is the name of current branch.
 export BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
 
--include hack/make/docker.mk
 
 ################################################################################
 ##                             VERIFY GO VERSION                              ##
@@ -45,6 +44,13 @@ ifeq (/src/$(MOD_NAME),$(subst $(GOPATH),,$(PWD)))
 $(warning This project uses Go modules and should not be cloned into the GOPATH)
 endif
 endif
+
+# Use GOPROXY environment variable if set
+GOPROXY := $(shell go env GOPROXY)
+ifeq (,$(strip $(GOPROXY)))
+GOPROXY := https://proxy.golang.org
+endif
+export GOPROXY
 
 ################################################################################
 ##                                DEPENDENCIES                                ##
@@ -249,6 +255,10 @@ $(TOOLING_BINARIES):
 e2e:
 	make -C $(E2E_DIR) run
 
+.PHONY: e2e-latest-k8s-version
+e2e-latest-k8s-version:
+	make -C $(E2E_DIR) run-on-latest-k8s-version
+
 .PHONY: integration-test
 integration-test: | $(DOCKER_SOCK)
 	$(MAKE) -C test/integration
@@ -305,28 +315,12 @@ staticcheck:
 
 vet:
 	hack/check-vet.sh
-################################################################################
-##                                 BUILD IMAGES AND BINARIES                  ##
-################################################################################
-.PHONY: release
-release: | $(DOCKER_SOCK)
-	hack/release.sh
-
-################################################################################
-##                                  PUSH IMAGES AND BINARIES                  ##
-################################################################################
-.PHONY: release-push
-release-push: | $(DOCKER_SOCK)
-	hack/release.sh -p
 
 ################################################################################
 ##                                  CI IMAGE                                  ##
 ################################################################################
 build-ci-image:
 	$(MAKE) -C hack/images/ci build
-
-push-ci-image:
-	$(MAKE) -C hack/images/ci push
 
 print-ci-image:
 	@$(MAKE) --no-print-directory -C hack/images/ci print

@@ -19,15 +19,11 @@ package podman
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/version"
 
 	"sigs.k8s.io/kind/pkg/cluster/nodes"
 	"sigs.k8s.io/kind/pkg/cluster/nodeutils"
@@ -40,6 +36,8 @@ import (
 	"sigs.k8s.io/kind/pkg/cluster/internal/providers/common"
 	"sigs.k8s.io/kind/pkg/internal/apis/config"
 	"sigs.k8s.io/kind/pkg/internal/cli"
+	"sigs.k8s.io/kind/pkg/internal/sets"
+	"sigs.k8s.io/kind/pkg/internal/version"
 )
 
 // NewProvider returns a new provider based on executing `podman ...`
@@ -131,7 +129,7 @@ func (p *provider) ListNodes(cluster string) ([]nodes.Node, error) {
 	)
 	lines, err := exec.OutputLines(cmd)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list clusters")
+		return nil, errors.Wrap(err, "failed to list nodes")
 	}
 	// convert names to node handles
 	ret := make([]nodes.Node, 0, len(lines))
@@ -166,6 +164,9 @@ func (p *provider) DeleteNodes(n []nodes.Node) error {
 			return err
 		}
 		nodeVolumes = append(nodeVolumes, volumes...)
+	}
+	if len(nodeVolumes) == 0 {
+		return nil
 	}
 	return deleteVolumes(nodeVolumes)
 }
@@ -359,44 +360,83 @@ func (p *provider) CollectLogs(dir string, nodes []nodes.Node) error {
 // The info is cached on the first time of the execution.
 func (p *provider) Info() (*providers.ProviderInfo, error) {
 	if p.info == nil {
-		p.info = info(p.logger)
+		var err error
+		p.info, err = info(p.logger)
+		if err != nil {
+			return p.info, err
+		}
 	}
 	return p.info, nil
 }
 
-func info(logger log.Logger) *providers.ProviderInfo {
-	euid := os.Geteuid()
-	info := &providers.ProviderInfo{
-		Rootless: euid != 0,
+// podmanInfo corresponds to `podman info --format 'json`.
+// The structure is different from `docker info --format '{{json .}}'`,
+// and lacks information about the availability of the cgroup controllers.
+type podmanInfo struct {
+	Host struct {
+		CgroupVersion     string   `json:"cgroupVersion,omitempty"` // "v2"
+		CgroupControllers []string `json:"cgroupControllers,omitempty"`
+		Security          struct {
+			Rootless bool `json:"rootless,omitempty"`
+		} `json:"security"`
+	} `json:"host"`
+}
+
+// info detects ProviderInfo by executing `podman info --format json`.
+func info(logger log.Logger) (*providers.ProviderInfo, error) {
+	const podman = "podman"
+	args := []string{"info", "--format", "json"}
+	cmd := exec.Command(podman, args...)
+	out, err := exec.Output(cmd)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get podman info (%s %s): %q",
+			podman, strings.Join(args, " "), string(out))
 	}
-	if _, err := os.Stat("/sys/fs/cgroup/cgroup.controllers"); err == nil {
-		info.Cgroup2 = true
-		// Unlike `docker info`, `podman info` does not print available cgroup controllers.
-		// So we parse "cgroup.subtree_control" file by ourselves.
-		subtreeControl := "/sys/fs/cgroup/cgroup.subtree_control"
-		if info.Rootless {
-			// Change subtreeControl to the path of the systemd user-instance.
-			// Non-systemd hosts are not supported.
-			subtreeControl = fmt.Sprintf("/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service/cgroup.subtree_control", euid, euid)
-		}
-		if subtreeControlBytes, err := ioutil.ReadFile(subtreeControl); err != nil {
-			logger.Warnf("failed to read %q: %+v", subtreeControl, err)
-		} else {
-			for _, controllerName := range strings.Fields(string(subtreeControlBytes)) {
-				switch controllerName {
-				case "cpu":
-					info.SupportsCPUShares = true
-				case "memory":
-					info.SupportsMemoryLimit = true
-				case "pids":
-					info.SupportsPidsLimit = true
-				}
+	var pInfo podmanInfo
+	if err := json.Unmarshal(out, &pInfo); err != nil {
+		return nil, err
+	}
+	stringSliceContains := func(s []string, str string) bool {
+		for _, v := range s {
+			if v == str {
+				return true
 			}
 		}
-	} else if !info.Rootless {
-		info.SupportsCPUShares = true
-		info.SupportsMemoryLimit = true
-		info.SupportsPidsLimit = true
+		return false
 	}
-	return info
+
+	// Since Podman version before v4.0.0 does not gives controller info.
+	// We assume all the cgroup controllers to be available.
+	// For rootless, this assumption is not always correct,
+	// so we print the warning below.
+	cgroupSupportsMemoryLimit := true
+	cgroupSupportsPidsLimit := true
+	cgroupSupportsCPUShares := true
+
+	v, err := getPodmanVersion()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check podman version")
+	}
+	// Info for controllers must be available after v4.0.0
+	// via https://github.com/containers/podman/pull/10387
+	if v.AtLeast(version.MustParseSemantic("4.0.0")) {
+		cgroupSupportsMemoryLimit = stringSliceContains(pInfo.Host.CgroupControllers, "memory")
+		cgroupSupportsPidsLimit = stringSliceContains(pInfo.Host.CgroupControllers, "pids")
+		cgroupSupportsCPUShares = stringSliceContains(pInfo.Host.CgroupControllers, "cpu")
+	}
+
+	info := &providers.ProviderInfo{
+		Rootless:            pInfo.Host.Security.Rootless,
+		Cgroup2:             pInfo.Host.CgroupVersion == "v2",
+		SupportsMemoryLimit: cgroupSupportsMemoryLimit,
+		SupportsPidsLimit:   cgroupSupportsPidsLimit,
+		SupportsCPUShares:   cgroupSupportsCPUShares,
+	}
+	if info.Rootless && !v.AtLeast(version.MustParseSemantic("4.0.0")) {
+		if logger != nil {
+			logger.Warn("Cgroup controller detection is not implemented for Podman. " +
+				"If you see cgroup-related errors, you might need to set systemd property \"Delegate=yes\", see https://kind.sigs.k8s.io/docs/user/rootless/")
+		}
+	}
+	return info, nil
 }
