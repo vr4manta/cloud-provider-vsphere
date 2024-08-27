@@ -25,6 +25,15 @@ import (
 	klog "k8s.io/klog/v2"
 )
 
+// LoadOptions contains all customized options used for load data source(s).
+type LoadOptions struct {
+	// SuppressAllErrorLogMsgs If true will suppress all error log messages when attempting to load the config
+	SuppressAllErrorLogMsgs bool
+
+	// SuppressUnmarshalErrorLogMsg If true will suppress all unmarshal error log messages when attempting to load the config
+	SuppressUnmarshalErrorLogMsg bool
+}
+
 /*
 	TODO:
 	When the INI based cloud-config is deprecated, this functions below should be preserved

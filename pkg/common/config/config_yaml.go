@@ -195,8 +195,15 @@ func (ccy *CommonConfigYAML) validateConfig() error {
 
 // ReadRawConfigYAML parses vSphere cloud config file and stores it into ConfigYAML
 func ReadRawConfigYAML(byConfig []byte) (*CommonConfigYAML, error) {
+	return ReadRawConfigYAMLWithOptions(byConfig, LoadOptions{})
+}
+
+// ReadRawConfigYAML parses vSphere cloud config file and stores it into ConfigYAML
+func ReadRawConfigYAMLWithOptions(byConfig []byte, options LoadOptions) (*CommonConfigYAML, error) {
 	if len(byConfig) == 0 {
-		klog.Errorf("Invalid YAML file")
+		if !options.SuppressAllErrorLogMsgs {
+			klog.Errorf("Invalid YAML file")
+		}
 		return nil, fmt.Errorf("Invalid YAML file")
 	}
 
@@ -205,13 +212,17 @@ func ReadRawConfigYAML(byConfig []byte) (*CommonConfigYAML, error) {
 	}
 
 	if err := yaml.Unmarshal(byConfig, &cfg); err != nil {
-		klog.Errorf("Unmarshal failed: %s", err)
+		if !options.SuppressAllErrorLogMsgs && !options.SuppressUnmarshalErrorLogMsg {
+			klog.Errorf("Unmarshal failed: %s", err)
+		}
 		return nil, err
 	}
 
 	err := cfg.validateConfig()
 	if err != nil {
-		klog.Errorf("validateConfig failed: %s", err)
+		if !options.SuppressAllErrorLogMsgs {
+			klog.Errorf("validateConfig failed: %s", err)
+		}
 		return nil, err
 	}
 
@@ -220,7 +231,12 @@ func ReadRawConfigYAML(byConfig []byte) (*CommonConfigYAML, error) {
 
 // ReadConfigYAML parses vSphere cloud config file and stores it into Config
 func ReadConfigYAML(byConfig []byte) (*Config, error) {
-	cfg, err := ReadRawConfigYAML(byConfig)
+	return ReadConfigYAMLWithOptions(byConfig, LoadOptions{})
+}
+
+// ReadConfigYAMLWithOptions parses vSphere cloud config file and stores it into Config
+func ReadConfigYAMLWithOptions(byConfig []byte, options LoadOptions) (*Config, error) {
+	cfg, err := ReadRawConfigYAMLWithOptions(byConfig, options)
 	if err != nil {
 		return nil, err
 	}
