@@ -65,7 +65,7 @@ var (
 	// If it is not set, a local clusterctl repository (including a clusterctl config) will be created automatically.
 	clusterctlConfig string
 
-	// image is the cloud-controller-manager image to be tested, for example, gcr.io/cloud-provider-vsphere/cpi/pr/manager
+	// image is the cloud-controller-manager image to be tested, for example, gcr.io/k8s-staging-cloud-pv-vsphere/cloud-provider-vsphere
 	image string
 
 	// version is the cloud-controller-manager version to be tested, for example, v1.22.3-76-g6f4fa01
@@ -211,9 +211,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}
 		workloadResult = &clusterctl.ApplyClusterTemplateAndWaitResult{}
 		resolveK8sVersion()
-		// if use dev k8s version, install-on-bootstrap is needed to install Kubernetes on bootstrap
+		// if use dev k8s version, fast-rollout is needed to install Kubernetes on bootstrap
 		if useLatestK8sVersion {
-			workloadInput.ConfigCluster.Flavor = "install-on-bootstrap"
+			workloadInput.ConfigCluster.Flavor = "fast-rollout"
 		} else {
 			workloadInput.ConfigCluster.KubernetesVersion = e2eConfig.GetVariable("KUBERNETES_VERSION")
 		}
