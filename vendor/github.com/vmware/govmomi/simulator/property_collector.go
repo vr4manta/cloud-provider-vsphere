@@ -471,7 +471,10 @@ func (rr *retrieveResult) collect(ctx *Context, ref types.ManagedObjectReference
 	}
 
 	if match {
-		rr.Objects = append(rr.Objects, content)
+		// Copy while content.Obj is locked, as it won't be when final results are encoded.
+		var dst types.ObjectContent
+		deepCopy(&content, &dst)
+		rr.Objects = append(rr.Objects, dst)
 	}
 
 	rr.collected[ref] = true
@@ -515,7 +518,7 @@ func (rr *retrieveResult) selectSet(ctx *Context, obj reflect.Value, s []types.B
 	return nil
 }
 
-func (pc *PropertyCollector) collect(ctx *Context, r *types.RetrievePropertiesEx) (*types.RetrieveResult, types.BaseMethodFault) {
+func collect(ctx *Context, r *types.RetrievePropertiesEx) (*types.RetrieveResult, types.BaseMethodFault) {
 	var refs []types.ManagedObjectReference
 
 	rr := &retrieveResult{
@@ -571,6 +574,8 @@ func (pc *PropertyCollector) CreateFilter(ctx *Context, c *types.CreateFilter) s
 		Returnval: filter.Self,
 	}
 
+	ctx.Map.AddHandler(filter)
+
 	return body
 }
 
@@ -592,8 +597,7 @@ func (pc *PropertyCollector) DestroyPropertyCollector(ctx *Context, c *types.Des
 	body := &methods.DestroyPropertyCollectorBody{}
 
 	for _, ref := range pc.Filter {
-		filter := ctx.Session.Get(ref).(*PropertyFilter)
-		filter.DestroyPropertyFilter(ctx, &types.DestroyPropertyFilter{This: ref})
+		ctx.Session.Remove(ctx, ref)
 	}
 
 	ctx.Session.Remove(ctx, c.This)
@@ -663,7 +667,7 @@ func (pc *PropertyCollector) ContinueRetrievePropertiesEx(ctx *Context, r *types
 func (pc *PropertyCollector) RetrievePropertiesEx(ctx *Context, r *types.RetrievePropertiesEx) soap.HasFault {
 	body := &methods.RetrievePropertiesExBody{}
 
-	res, fault := pc.collect(ctx, r)
+	res, fault := collect(ctx, r)
 
 	if fault != nil {
 		switch fault.(type) {
@@ -759,7 +763,7 @@ func (pc *PropertyCollector) PutObject(o mo.Reference) {
 	})
 }
 
-func (pc *PropertyCollector) UpdateObject(o mo.Reference, changes []types.PropertyChange) {
+func (pc *PropertyCollector) UpdateObject(_ *Context, o mo.Reference, changes []types.PropertyChange) {
 	pc.update(types.ObjectUpdate{
 		Obj:       o.Reference(),
 		Kind:      types.ObjectUpdateKindModify,
@@ -777,12 +781,12 @@ func (pc *PropertyCollector) RemoveObject(_ *Context, ref types.ManagedObjectRef
 
 func (pc *PropertyCollector) apply(ctx *Context, update *types.UpdateSet) types.BaseMethodFault {
 	for _, ref := range pc.Filter {
-		filter := ctx.Session.Get(ref).(*PropertyFilter)
+		filter, ok := ctx.Session.Get(ref).(*PropertyFilter)
+		if !ok {
+			continue
+		}
 
-		r := &types.RetrievePropertiesEx{}
-		r.SpecSet = append(r.SpecSet, filter.Spec)
-
-		res, fault := pc.collect(ctx, r)
+		res, fault := filter.collect(ctx)
 		if fault != nil {
 			return fault
 		}
@@ -905,7 +909,9 @@ func (pc *PropertyCollector) WaitForUpdatesEx(ctx *Context, r *types.WaitForUpda
 		ctx.Map.AddHandler(pc) // Listen for create, update, delete of managed objects
 		apply()                // Collect current state
 		set.Version = "-"      // Next request with Version set will wait via loop below
-		pc.pending = pageUpdateSet(body.Res.Returnval, maxObject)
+		if body.Res != nil {
+			pc.pending = pageUpdateSet(body.Res.Returnval, maxObject)
+		}
 		return body
 	}
 
@@ -946,6 +952,7 @@ func (pc *PropertyCollector) WaitForUpdatesEx(ctx *Context, r *types.WaitForUpda
 
 			for _, f := range pc.Filter {
 				filter := ctx.Session.Get(f).(*PropertyFilter)
+				filter.update(ctx)
 				fu := types.PropertyFilterUpdate{Filter: f}
 
 				for _, update := range updates {
