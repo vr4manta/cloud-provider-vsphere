@@ -33,6 +33,7 @@ import (
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphere"
 	"k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphere/loadbalancer"
+	voptions "k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphere/options"
 	"k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphereparavirtual"
 	"k8s.io/cloud-provider/app"
 	appconfig "k8s.io/cloud-provider/app/config"
@@ -96,6 +97,8 @@ func main() {
 		// the legcay paravirtual mode is removed.
 		globalflag.Register(namedFlagSets.FlagSet("generic"), "is-legacy-paravirtual")
 	}
+
+	voptions.AddFlags(namedFlagSets.FlagSet("cloud-node-controller"))
 
 	for _, f := range namedFlagSets.FlagSets {
 		fs.AddFlagSet(f)
