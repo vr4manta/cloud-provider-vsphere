@@ -271,6 +271,7 @@ func buildVSphereFromConfig(cfg *ccfg.CPIConfig, nsxtcfg *ncfg.Config, lbcfg *lc
 		loadbalancer:        lb,
 		routes:              routes,
 		instances:           newInstances(nm),
+		instancesV2:         newInstancesV2(nm, cfg.Labels.Zone, cfg.Labels.Region),
 		zones:               newZones(nm, cfg.Labels.Zone, cfg.Labels.Region),
 	}
 	return &vs, nil

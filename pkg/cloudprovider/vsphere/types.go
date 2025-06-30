@@ -46,8 +46,9 @@ type VSphere struct {
 	routes       route.RoutesProvider
 
 	// cloud provider interfaces
-	instances cloudprovider.Instances
-	zones     cloudprovider.Zones
+	instances   cloudprovider.Instances
+	zones       cloudprovider.Zones
+	instancesV2 cloudprovider.InstancesV2
 	/*
 		Interfaces end
 	*/
@@ -110,6 +111,14 @@ type instances struct {
 }
 
 type zones struct {
+	nodeManager *NodeManager
+	zone        string
+	region      string
+}
+
+type instancesV2 struct {
+	instances
+	zones
 	nodeManager *NodeManager
 	zone        string
 	region      string
