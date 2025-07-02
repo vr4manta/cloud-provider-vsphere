@@ -117,11 +117,8 @@ type zones struct {
 }
 
 type instancesV2 struct {
-	instances
-	zones
-	nodeManager *NodeManager
-	zone        string
-	region      string
+	instances cloudprovider.Instances
+	zones     cloudprovider.Zones
 }
 
 // GuestOSLookup is a table for quick lookup between guestOsIdentifier and a shorthand name

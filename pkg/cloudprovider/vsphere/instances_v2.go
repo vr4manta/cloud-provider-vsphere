@@ -14,11 +14,10 @@ import (
 
 var AdditionalLabels string
 
-func newInstancesV2(nodeManager *NodeManager, zone string, region string) cloudprovider.InstancesV2 {
+func newInstancesV2(instances cloudprovider.Instances, zones cloudprovider.Zones) cloudprovider.InstancesV2 {
 	return &instancesV2{
-		nodeManager: nodeManager,
-		zone:        zone,
-		region:      region,
+		instances: instances,
+		zones:     zones,
 	}
 }
 
@@ -27,7 +26,7 @@ func (c *instancesV2) getProviderID(ctx context.Context, node *v1.Node) (string,
 		return node.Spec.ProviderID, nil
 	}
 
-	instanceID, err := c.InstanceID(ctx, types.NodeName(node.Name))
+	instanceID, err := c.instances.InstanceID(ctx, types.NodeName(node.Name))
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +42,7 @@ func (c *instancesV2) InstanceExists(ctx context.Context, node *v1.Node) (bool, 
 		return false, err
 	}
 
-	return c.InstanceExistsByProviderID(ctx, providerID)
+	return c.instances.InstanceExistsByProviderID(ctx, providerID)
 }
 
 // InstanceShutdown returns true if the instance is shutdown according to the cloud provider.
@@ -54,11 +53,14 @@ func (c *instancesV2) InstanceShutdown(ctx context.Context, node *v1.Node) (bool
 		return false, err
 	}
 
-	return c.InstanceShutdownByProviderID(ctx, providerID)
+	return c.instances.InstanceShutdownByProviderID(ctx, providerID)
 }
 
 func (c *instancesV2) getAdditionalLabels() (map[string]string, error) {
 	additionalLabels := map[string]string{}
+	if AdditionalLabels == "" {
+		return additionalLabels, nil
+	}
 
 	// We may want to have a way to pass in additional labels to add to a node based on CCM configuration.
 	for _, label := range strings.Split(AdditionalLabels, ",") {
@@ -86,17 +88,17 @@ func (c *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*clo
 		return nil, err
 	}
 
-	instanceType, err := c.InstanceTypeByProviderID(ctx, providerID)
+	instanceType, err := c.instances.InstanceTypeByProviderID(ctx, providerID)
 	if err != nil {
 		return nil, err
 	}
 
-	zone, err := c.GetZoneByProviderID(ctx, providerID)
+	zone, err := c.zones.GetZoneByProviderID(ctx, providerID)
 	if err != nil {
 		return nil, err
 	}
 
-	nodeAddresses, err := c.NodeAddressesByProviderID(ctx, providerID)
+	nodeAddresses, err := c.instances.NodeAddressesByProviderID(ctx, providerID)
 	if err != nil {
 		return nil, err
 	}
