@@ -118,7 +118,7 @@ func main() {
 		cliflag.PrintSections(cmd.OutOrStdout(), namedFlagSets, cols)
 	})
 
-	options2.AddFlags(fs)
+	options2.AddFlags(namedFlagSets.FlagSet("cloud-node-controller"))
 
 	// TODO: once we switch everything over to Cobra commands, we can go back to calling
 	// utilflag.InitFlags() (by removing its pflag.Parse() call). For now, we have to set the
@@ -132,7 +132,6 @@ func main() {
 	var clusterNameFlag *pflag.Value
 	var controllersFlag *pflag.Value
 	var cloudProviderFlag *pflag.Value
-	var nodeLabelsFlag *pflag.Value
 	command.Flags().VisitAll(func(flag *pflag.Flag) {
 		switch flag.Name {
 		// Set cloud-provider flag to vsphere
@@ -146,8 +145,6 @@ func main() {
 			clusterNameFlag = &flag.Value
 		case "controllers":
 			controllersFlag = &flag.Value
-		case "node-labels":
-			nodeLabelsFlag = &flag.Value
 		}
 	})
 
@@ -236,10 +233,6 @@ func main() {
 		if clusterNameFlag != nil {
 			loadbalancer.ClusterName = (*clusterNameFlag).String()
 			vsphereparavirtual.ClusterName = (*clusterNameFlag).String()
-		}
-		// Set the additional labels data
-		if nodeLabelsFlag != nil {
-			vsphere.AdditionalLabels = (*nodeLabelsFlag).String()
 		}
 		// if route controller is enabled in vsphereparavirtual cloud provider, set routeEnabled to true
 		if shouldEnableRouteController(controllersFlag, cloudProviderFlag) {

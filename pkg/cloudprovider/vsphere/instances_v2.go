@@ -9,10 +9,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
-	"strings"
 )
 
-var AdditionalLabels string
+var AdditionalLabels map[string]string
 
 func newInstancesV2(instances cloudprovider.Instances, zones cloudprovider.Zones) cloudprovider.InstancesV2 {
 	return &instancesV2{
@@ -57,24 +56,7 @@ func (c *instancesV2) InstanceShutdown(ctx context.Context, node *v1.Node) (bool
 }
 
 func (c *instancesV2) getAdditionalLabels() (map[string]string, error) {
-	additionalLabels := map[string]string{}
-	if AdditionalLabels == "" {
-		return additionalLabels, nil
-	}
-
-	// We may want to have a way to pass in additional labels to add to a node based on CCM configuration.
-	for _, label := range strings.Split(AdditionalLabels, ",") {
-		labelKey := label
-		labelValue := ""
-		if strings.Contains(label, "=") {
-			parts := strings.Split(label, "=")
-			labelKey = parts[0]
-			labelValue = parts[1]
-		}
-		additionalLabels[labelKey] = labelValue
-	}
-
-	return additionalLabels, nil
+	return AdditionalLabels, nil
 }
 
 // InstanceMetadata returns the instance's metadata. The values returned in InstanceMetadata are

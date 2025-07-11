@@ -18,9 +18,10 @@ package options
 
 import (
 	"github.com/spf13/pflag"
+	"k8s.io/cloud-provider-vsphere/pkg/cloudprovider/vsphere"
 )
 
 // AddFlags add the additional flags for the controller
 func AddFlags(fs *pflag.FlagSet) {
-	fs.String("node-labels", "", "Additional labels to add to vSphere nodes during registration.")
+	fs.StringToStringVar(&vsphere.AdditionalLabels, "node-labels", nil, "Additional labels to add to vSphere nodes during registration.")
 }
